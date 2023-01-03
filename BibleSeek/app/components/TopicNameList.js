@@ -1,4 +1,4 @@
-import { useNavigation } from "@react-navigation/native";
+import { getPathFromState, useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
@@ -10,34 +10,96 @@ import {
 } from "react-native";
 
 // definition of the Item, which will be rendered in the FlatList
-
 const Item = ({ name }) => (
   <View style={styles.item}>
     <Text style={styles.title}>{name}</Text>
   </View>
 );
 
-// the filter
 const TopicNameList = (props) => {
 
   const navigation = useNavigation();
   const [filteredTopicsList, setFilteredTopicsList] = useState(props.searchPhrase);
   const [noData, setNoData] = useState(true);
 
+  // Levenshtein Distance Algorithm
+  function getEditDistance(a, b) {
+    if (a.length === 0) return b.length; 
+    if (b.length === 0) return a.length;
+  
+    var matrix = [];
+  
+    // increment along the first column of each row
+    var i;
+    for (i = 0; i <= b.length; i++) {
+      matrix[i] = [i];
+    }
+  
+    // increment each column in the first row
+    var j;
+    for (j = 0; j <= a.length; j++) {
+      matrix[0][j] = j;
+    }
+  
+    // Fill in the rest of the matrix
+    for (i = 1; i <= b.length; i++) {
+      for (j = 1; j <= a.length; j++) {
+        if (b.charAt(i-1) == a.charAt(j-1)) {
+          matrix[i][j] = matrix[i-1][j-1];
+        } else {
+          matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
+                                  Math.min(matrix[i][j-1] + 1, // insertion
+                                           matrix[i-1][j] + 1)); // deletion
+        }
+      }
+    }
+
+    return matrix[b.length][a.length];
+  };
+
+  function getClosestTerm(searchPhrase, topicsList) {
+    let closetResults = topicsList.reduce((a,b) => {
+      return getEditDistance(a.toUpperCase(), searchPhrase.toUpperCase())/a.length <= getEditDistance(b.toUpperCase(), searchPhrase.toUpperCase())/a.length ? a : b;
+    })
+    return closetResults;
+  }
+
+  function getFilteredTopicsList(searchPhrase, topicsList) {
+    // Making a case insensitive regular expression
+    var regex = new RegExp(`${searchPhrase.trim()}`, 'i');
+
+    let filteredTopicsList = topicsList.filter((item) => {
+      return item.search(regex) >= 0;
+    });
+
+    return filteredTopicsList.sort((a,b) => { return a.search(regex) - b.search(regex);}); 
+  }
+
   searchText = (phrase) => {
     console.log("=============== SEARCHING LIST ===============");
-    let text = phrase.toUpperCase()
-    let currentTopicsList = props.data
-    let filteredTopicsList = currentTopicsList.filter((item) => {
-      return item.toUpperCase().match(text)
-    })
-    if (!text || text === '') {
-      setFilteredTopicsList(currentTopicsList);
+    let topicsList = props.data
+
+    let filteredTopicsList = getFilteredTopicsList(phrase, topicsList);
+
+    if (!phrase || phrase === '') {
+      setFilteredTopicsList(topicsList);
       setNoData(false);
-    } else if (!Array.isArray(filteredTopicsList) && !filteredTopicsList.length) {
-      // set no data flag to true so as to render flatlist conditionally
-      setNoData(true);
-    } else if (Array.isArray(filteredTopicsList)) {
+    }
+
+    else if (!filteredTopicsList.length) {
+      if (phrase.trim().length <= 18) {
+        let closestTerm = getClosestTerm(phrase,topicsList);
+        console.log(closestTerm);
+        let filteredTopicsListUsingClosestTerm = getFilteredTopicsList(closestTerm, topicsList);
+        setFilteredTopicsList(filteredTopicsListUsingClosestTerm);
+        setNoData(false);
+      } else {
+        setFilteredTopicsList([]);
+        setNoData(true);
+      }
+    }
+    
+    else if (Array.isArray(filteredTopicsList)) {
       setFilteredTopicsList(filteredTopicsList);
       setNoData(false);
     }
@@ -63,7 +125,7 @@ const TopicNameList = (props) => {
         }}
       >
       {noData ? (
-        <Text>Nothing Found</Text>
+        <Text style={{fontSize:16, alignSelf: "center", paddingTop: 5}}>No Popular Topics Found</Text>
       ) : (
         <FlatList
           data={filteredTopicsList}
@@ -81,8 +143,8 @@ export default TopicNameList;
 
 const styles = StyleSheet.create({
   list__container: {
-    height: "auto",
-    width: "100%",
+    flex: 1,
+    width: "100%"
   },
   item: {
     marginLeft: 30,
