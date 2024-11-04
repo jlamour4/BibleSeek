@@ -2,6 +2,8 @@
 
 BibleSeek is a cross-platform mobile app designed to help users explore Bible verses by topics, enabling deeper study and meaningful engagement with scripture. The app provides an intuitive way to search for, organize, and vote on Bible verses under specific topics. Users can also share insights, add personal notes, and engage in discussions, fostering a social, interactive experience.
 
+![BibleSeek Screens](https://www.joshualamour.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fbibleseek.ac8790b1.png&w=1920&q=75)
+
 ## Features
 
 - **Verse Search by Topic**: Easily search for Bible verses grouped under various topics.
