@@ -1,7 +1,9 @@
+import 'package:bible_seek/src/colors.dart';
 import 'package:bible_seek/src/search.dart';
 import 'package:bible_seek/src/signin.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -12,7 +14,27 @@ class MyHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent, // Makes the status bar transparent
+      statusBarIconBrightness:
+          Brightness.light, // Change this to Brightness.dark for dark icons
+    ));
+
     return Scaffold(
+      bottomNavigationBar: Container(
+          child: BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: AppColor.kWhite,
+              currentIndex: 0,
+              onTap: (int index) {},
+              items: [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.favorite_border), label: 'Favorites'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.mode_comment_outlined), label: 'Messages'),
+            BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'More'),
+          ])),
       body: SizedBox(
         width: MediaQuery.of(context).size.width,
         height: MediaQuery.of(context).size.height,

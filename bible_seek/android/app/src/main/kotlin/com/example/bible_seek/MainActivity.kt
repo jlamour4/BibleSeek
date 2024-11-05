@@ -1,4 +1,4 @@
-package com.example.bible_seek
+package com.jlam.bibleseek
 
 import io.flutter.embedding.android.FlutterActivity
 
