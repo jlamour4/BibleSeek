@@ -21,15 +21,6 @@ BibleSeek is a cross-platform mobile app designed to help users explore Bible ve
 - **Database**: MySQL - stores verses, topics, and user information.
 - **Authentication**: OAuth for secure user authentication.
 
-## Getting Started
-
-### Prerequisites
-
-- Flutter SDK installed
-- Android Studio or Xcode (for mobile development)
-- Kotlin and IntelliJ IDEA (for backend development)
-- MySQL server
-
 ## Installation
 
 ### Prerequisites
