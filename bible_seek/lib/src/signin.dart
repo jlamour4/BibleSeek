@@ -40,6 +40,13 @@ class _SigninPageState extends State<SigninPage> {
               onTap: () async {
                 try {
                   final user = await UserController().loginWithGoogle();
+                  if (user != null) {
+                    final idToken = await user.getIdToken();
+                    var thang = idToken?.split('.');
+                    print('ID Token: $idToken');
+                    print("CHECK HERE");
+                    thang?.forEach((element) => print(element));
+                  }
                   if (user != null && mounted) {
                     Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (context) => MyHomePage()));
