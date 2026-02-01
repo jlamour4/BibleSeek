@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:bible_seek/src/api/authenticated_client.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import '../config/config.dart';
 
 class UserController {
   static User? user = FirebaseAuth.instance.currentUser;
@@ -28,7 +29,7 @@ class UserController {
   }
 
   Future<void> saveUserToBackend(User? user) async {
-    final client = AuthenticatedClient(http.Client());
+    final dio = AuthenticatedDio(Dio()).dio;
 
     if (user == null) {
       print("User is null, skipping save.");
@@ -50,12 +51,14 @@ class UserController {
     if (authProvider == 'facebook.com') authProvider = 'facebook';
     if (authProvider == 'password') authProvider = 'email';
 
-    final response = await client.post(
-      Uri.parse('http://192.168.1.155:8080/api/users'),
-      headers: <String, String>{
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(<String, dynamic>{
+    final response = await dio.post(
+      '${AppConfig.currentHost}/api/users',
+      options: Options(
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+        },
+      ),
+      data: jsonEncode(<String, dynamic>{
         'username': uid,
         'name': displayName,
         'email': email,
@@ -67,7 +70,7 @@ class UserController {
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception(
-          'Failed to save user: ${response.statusCode} ${response.reasonPhrase}');
+          'Failed to save user: ${response.statusCode} ${response.statusMessage}');
     }
   }
 

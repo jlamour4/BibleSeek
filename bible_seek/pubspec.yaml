@@ -43,3 +43,9 @@ flutter:
     - assets/images/googleSymbol.png
     - assets/images/facebookSymbol.png
   uses-material-design: true
+
+flutter_native_splash:
+  color: "#A59F8C"
+  image: assets/images/bibleseek_logo.png
+  android: true
+  ios: true

@@ -1,8 +1,14 @@
+import 'dart:convert';
+
 import 'package:bible_seek/src/topic.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:bible_seek/src/config/config.dart';
+import 'package:bible_seek/src/api/authenticated_client.dart';
+
+final dio = AuthenticatedDio(Dio()).dio;
 
 class Topic {
   final String label;
@@ -21,34 +27,47 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   TextEditingController editingController = TextEditingController();
 
-  final duplicateItems = List<String>.generate(10000, (i) => "Item $i");
-  var items = <String>[];
-
-  final topics = [
-    Topic(label: "777", id: "1"),
-    Topic(label: "faith", id: "2"),
-    Topic(label: "love", id: "3"),
-    Topic(label: "grace", id: "4"),
-    Topic(label: "peace", id: "5"),
-    Topic(label: "kindness", id: "6"),
-    Topic(label: "happiness", id: "7"),
-    Topic(label: "Christ", id: "8"),
-    Topic(label: "God", id: "9"),
-    Topic(label: "Jesus", id: "10"),
-    Topic(label: "religion", id: "11"),
-    Topic(label: "condemnation", id: "12"),
-  ];
+  var topics = <Topic>[]; // List of topics from API
+  var filteredTopics = <Topic>[]; // List of topics to display, can be filtered
 
   @override
   void initState() {
-    items = duplicateItems;
     super.initState();
+    fetchTopics();
+  }
+
+  Future<void> fetchTopics() async {
+    try {
+      final response = await dio.get(
+        '${AppConfig.currentHost}/api/topics',
+        options: Options(
+          headers: <String, String>{
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          topics = (response.data as List)
+              .map((topic) => Topic(label: topic['name'], id: topic['id'].toString()))
+              .toList();
+          filteredTopics = topics;
+        });
+      } else {
+        throw Exception('Failed to load topics: ${response.statusCode} ${response.statusMessage}');
+      }
+    } catch (e) {
+      // Handle error
+      print(e);
+    }
   }
 
   void filterSearchResults(String query) {
     setState(() {
-      items = duplicateItems
-          .where((item) => item.toLowerCase().contains(query.toLowerCase()))
+      filteredTopics = topics
+          .where((topic) =>
+              topic.label.toLowerCase().contains(query.toLowerCase()))
           .toList();
     });
   }
@@ -64,7 +83,13 @@ class _SearchPageState extends State<SearchPage> {
               padding: const EdgeInsets.all(8.0),
               child: TextField(
                   onChanged: (value) {
-                    filterSearchResults(value);
+                    if (value.isEmpty) {
+                      setState(() {
+                        filteredTopics = topics;
+                      });
+                    } else {
+                      filterSearchResults(value);
+                    }
                   },
                   controller: editingController,
                   decoration: InputDecoration(
@@ -76,7 +101,7 @@ class _SearchPageState extends State<SearchPage> {
             Expanded(
               child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: topics.length,
+                itemCount: filteredTopics.length,
                 itemBuilder: (context, index) {
                   return ListTile(
                     onTap: () => {
@@ -90,7 +115,7 @@ class _SearchPageState extends State<SearchPage> {
                         Icon(Icons.search),
                         SizedBox(width: 10),
                         Text(
-                          '${topics[index].label}',
+                          '${filteredTopics[index].label}',
                           style: TextStyle(color: Colors.black),
                         ),
                       ],
