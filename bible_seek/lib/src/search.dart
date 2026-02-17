@@ -1,10 +1,6 @@
-import 'dart:convert';
-
-import 'package:bible_seek/src/topic.dart';
+import 'package:bible_seek/src/topic_verses_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:bible_seek/src/config/config.dart';
 import 'package:bible_seek/src/api/authenticated_client.dart';
 
@@ -18,7 +14,7 @@ class Topic {
 }
 
 class SearchPage extends StatefulWidget {
-  SearchPage({Key? key}) : super(key: key);
+  SearchPage({super.key});
 
   @override
   _SearchPageState createState() => _SearchPageState();
@@ -29,6 +25,7 @@ class _SearchPageState extends State<SearchPage> {
 
   var topics = <Topic>[]; // List of topics from API
   var filteredTopics = <Topic>[]; // List of topics to display, can be filtered
+  var _isLoading = true;
 
   @override
   void initState() {
@@ -36,7 +33,14 @@ class _SearchPageState extends State<SearchPage> {
     fetchTopics();
   }
 
+  @override
+  void dispose() {
+    editingController.dispose();
+    super.dispose();
+  }
+
   Future<void> fetchTopics() async {
+    setState(() => _isLoading = true);
     try {
       final response = await dio.get(
         '${AppConfig.currentHost}/api/topics',
@@ -53,12 +57,13 @@ class _SearchPageState extends State<SearchPage> {
               .map((topic) => Topic(label: topic['name'], id: topic['id'].toString()))
               .toList();
           filteredTopics = topics;
+          _isLoading = false;
         });
       } else {
         throw Exception('Failed to load topics: ${response.statusCode} ${response.statusMessage}');
       }
     } catch (e) {
-      // Handle error
+      setState(() => _isLoading = false);
       print(e);
     }
   }
@@ -74,59 +79,80 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                  onChanged: (value) {
-                    if (value.isEmpty) {
-                      setState(() {
-                        filteredTopics = topics;
-                      });
-                    } else {
-                      filterSearchResults(value);
-                    }
-                  },
-                  controller: editingController,
-                  decoration: InputDecoration(
-                      hintText: "Search for topics & keywords",
-                      hintStyle: TextStyle(
-                          color: Colors.black26, fontWeight: FontWeight.normal),
-                      prefixIcon: Icon(Icons.arrow_back))),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: TextField(
+          controller: editingController,
+          autofocus: true,
+          style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
+          decoration: InputDecoration(
+            hintText: "Search for topics & keywords",
+            hintStyle: textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
+              fontWeight: FontWeight.normal,
             ),
-            Expanded(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: filteredTopics.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    onTap: () => {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => TopicPage()),
-                      )
-                    },
-                    title: Row(
-                      children: [
-                        Icon(Icons.search),
-                        SizedBox(width: 10),
-                        Text(
-                          '${filteredTopics[index].label}',
-                          style: TextStyle(color: Colors.black),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+            isDense: true,
+          ),
+          onChanged: (value) {
+            if (value.isEmpty) {
+              setState(() => filteredTopics = topics);
+            } else {
+              filterSearchResults(value);
+            }
+          },
         ),
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : filteredTopics.isEmpty
+              ? Center(
+                  child: Text(
+                    'No topics found',
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: filteredTopics.length,
+                  itemBuilder: (context, index) {
+                    final topic = filteredTopics[index];
+                    return ListTile(
+                      leading: Icon(
+                        Icons.search,
+                        color: colorScheme.onSurfaceVariant,
+                        size: 20,
+                      ),
+                      title: Text(
+                        topic.label,
+                        style: textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TopicVersesScreen(
+                              topicId: topic.id,
+                              topicName: topic.label,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
     );
   }
 }
@@ -146,18 +172,18 @@ class SearchInput extends StatelessWidget {
   final TextEditingController textController;
   final String hintText;
   const SearchInput(
-      {required this.textController, required this.hintText, Key? key})
-      : super(key: key);
+      {required this.textController, required this.hintText, super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(boxShadow: [
         BoxShadow(
             offset: const Offset(0, 0),
             blurRadius: 10,
             spreadRadius: 0,
-            color: Colors.black.withOpacity(.15)),
+            color: Colors.black.withValues(alpha: 0.15)),
       ]),
       child: TextField(
         controller: textController,
@@ -168,7 +194,7 @@ class SearchInput extends StatelessWidget {
             // color: Color(0xff4338CA),
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: colorScheme.surface,
           hintText: hintText,
           hintStyle:
               const TextStyle(color: Colors.grey, fontWeight: FontWeight.w300),

@@ -5,9 +5,8 @@ part 'user.g.dart';
 part 'user.freezed.dart';
 
 @freezed
-class User with _$User {
-  @JsonSerializable(fieldRename: FieldRename.snake)
-  factory User({
+abstract class User with _$User {
+  const factory User({
     required int reputation,
     required int userId,
     BadgeCount? badgeCounts,
@@ -20,8 +19,8 @@ class User with _$User {
 }
 
 @freezed
-class BadgeCount with _$BadgeCount {
-  factory BadgeCount({
+abstract class BadgeCount with _$BadgeCount {
+  const factory BadgeCount({
     required int bronze,
     required int silver,
     required int gold,

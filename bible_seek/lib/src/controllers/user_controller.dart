@@ -10,14 +10,20 @@ class UserController {
   static User? user = FirebaseAuth.instance.currentUser;
 
   Future<User?> loginWithGoogle() async {
-    final GoogleSignInAccount? googleAccount = await GoogleSignIn().signIn();
-    final GoogleSignInAuthentication? googleAuth =
-        await googleAccount?.authentication;
+    final GoogleSignInAccount? googleAccount = await GoogleSignIn.instance.authenticate();
+    if (googleAccount == null) return null;
+    
+    final GoogleSignInAuthentication googleAuth =
+        googleAccount.authentication;
+    
+    // In google_sign_in 7.x, accessToken is in GoogleSignInClientAuthorization
+    final GoogleSignInClientAuthorization? clientAuth =
+        await googleAccount.authorizationClient.authorizationForScopes([]);
 
     // signing in with firebase auth
     final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth?.accessToken,
-      idToken: googleAuth?.idToken,
+      accessToken: clientAuth?.accessToken,
+      idToken: googleAuth.idToken,
     );
 
     final userCredential =
@@ -76,6 +82,6 @@ class UserController {
 
   static Future<void> signOut() async {
     await FirebaseAuth.instance.signOut();
-    await GoogleSignIn().signOut();
+    await GoogleSignIn.instance.signOut();
   }
 }

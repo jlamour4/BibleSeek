@@ -175,16 +175,17 @@ class NavBarIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return IconButton(
       onPressed: onPressed,
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
       icon: CircleAvatar(
-        backgroundColor: selected ? Colors.white : Colors.transparent,
+        backgroundColor: selected ? colorScheme.surface : Colors.transparent,
         child: Icon(
           icon,
           size: 25,
-          color: selected ? Colors.black : defaultColor,
+          color: selected ? colorScheme.onSurface : defaultColor,
         ),
       ),
     );

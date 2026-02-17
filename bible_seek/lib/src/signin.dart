@@ -161,7 +161,7 @@ class PrimaryButton extends StatefulWidget {
   final IconData? iconData;
   final Color? textColor, bgColor, borderColor;
   const PrimaryButton(
-      {Key? key,
+      {super.key,
       required this.onTap,
       required this.text,
       this.icons = "",
@@ -173,8 +173,7 @@ class PrimaryButton extends StatefulWidget {
       this.fontSize,
       required this.textColor,
       required this.bgColor,
-      this.iconData})
-      : super(key: key);
+      this.iconData});
 
   @override
   State<PrimaryButton> createState() => _PrimaryButtonState();
