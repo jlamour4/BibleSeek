@@ -1,4 +1,7 @@
-import 'package:bible_seek/src/colors.dart';
+import 'package:bible_seek/src/design/app_colors.dart';
+import 'package:bible_seek/src/design/radius.dart';
+import 'package:bible_seek/src/design/spacing.dart';
+import 'package:bible_seek/src/design/text_styles.dart';
 import 'package:bible_seek/src/search.dart';
 import 'package:bible_seek/src/signin.dart';
 import 'package:bible_seek/src/topic_verses_screen.dart';
@@ -28,13 +31,12 @@ class _MyHomePageState extends State<MyHomePage> {
     ));
 
     return Scaffold(
-      bottomNavigationBar: Container(
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: theme.colorScheme.surface,
-          currentIndex: _currentIndex,
-          onTap: (int index) => setState(() => _currentIndex = index),
-          items: const [
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: theme.colorScheme.surface,
+        currentIndex: _currentIndex,
+        onTap: (int index) => setState(() => _currentIndex = index),
+        items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(
                 icon: Icon(Icons.favorite_border), label: 'Favorites'),
@@ -43,7 +45,6 @@ class _MyHomePageState extends State<MyHomePage> {
             BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'More'),
           ],
         ),
-      ),
       body: IndexedStack(
         index: _currentIndex,
         children: const [
@@ -57,12 +58,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-const _headerGradient = LinearGradient(
+final _headerGradient = LinearGradient(
   begin: Alignment.topCenter,
   end: Alignment.bottomCenter,
   colors: [
-    Color.fromRGBO(126, 154, 216, 0.9),
-    Color.fromRGBO(122, 139, 176, 1),
+    AppColors.brandBlueLight.withValues(alpha: 0.9),
+    AppColors.brandBlue,
   ],
 );
 
@@ -90,11 +91,11 @@ class _HomeTab extends StatelessWidget {
               return Stack(
                 fit: StackFit.expand,
                 children: [
-                  Container(
-                    decoration: const BoxDecoration(
-                      gradient: _headerGradient,
-                    ),
-                  ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: _headerGradient,
+                ),
+              ),
                   SafeArea(
                     child: showFullHeader
                         ? SizedBox(
@@ -180,24 +181,23 @@ class _StickySearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textColor = colorScheme.onSurface;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
           onTap: () =>
               Navigator.push(context, MaterialPageRoute(builder: (_) => SearchPage())),
-          borderRadius: BorderRadius.circular(35),
+          borderRadius: AppRadius.r35,
           child: Container(
             height: 54,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space16),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(35),
+              borderRadius: AppRadius.r35,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 8,
+                  blurRadius: AppSpacing.space8,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -205,15 +205,11 @@ class _StickySearchBar extends StatelessWidget {
             child: Row(
               children: [
                 Icon(Icons.search, size: 22, color: colorScheme.onSurfaceVariant),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.space12),
                 Expanded(
                   child: Text(
                     'Search for topics & keywords',
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
-                    ),
+                    style: AppTextStyles.bodyLarge(context),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -226,7 +222,7 @@ class _StickySearchBar extends StatelessWidget {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: AppSpacing.space4),
                 GestureDetector(
                   onTap: () => Navigator.push(
                     context,
@@ -234,8 +230,8 @@ class _StickySearchBar extends StatelessWidget {
                   ),
                   child: CircleAvatar(
                     radius: 18,
-                    backgroundColor: AppColor.kTan,
-                    child: Icon(Icons.person, color: colorScheme.onSurface),
+                    backgroundColor: colorScheme.secondary,
+                    child: Icon(Icons.person, color: colorScheme.onSecondary),
                   ),
                 ),
               ],
@@ -376,12 +372,16 @@ class FollowingDevotionsSection extends StatelessWidget {
     final isSignedIn = FirebaseAuth.instance.currentUser != null;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      width: MediaQuery.of(context).size.width,
-      margin: const EdgeInsets.only(top: 0),
-      decoration: BoxDecoration(color: colorScheme.surface),
-      padding: const EdgeInsets.fromLTRB(25.0, 24.0, 25.0, 24.0),
-      child: Column(
+    return ColoredBox(
+      color: colorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.space25,
+          AppSpacing.space24,
+          AppSpacing.space25,
+          AppSpacing.space24,
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -419,6 +419,7 @@ class FollowingDevotionsSection extends StatelessWidget {
           else
             _SignInCtaCard(),
         ],
+        ),
       ),
     );
   }
@@ -436,7 +437,7 @@ class _SignInCtaCard extends StatelessWidget {
         border: Border.all(
           color: colorScheme.brightness == Brightness.dark
               ? colorScheme.outline.withValues(alpha: 0.3)
-              : AppColor.kLine,
+              : colorScheme.outline,
         ),
       ),
       child: Column(
@@ -453,8 +454,8 @@ class _SignInCtaCard extends StatelessWidget {
           const SizedBox(height: 16),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColor.kPrimary,
-              foregroundColor: AppColor.kWhite,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -491,7 +492,7 @@ class _DevotionCard extends StatelessWidget {
         border: Border.all(
           color: colorScheme.brightness == Brightness.dark
               ? colorScheme.outline.withValues(alpha: 0.3)
-              : AppColor.kLine,
+              : colorScheme.outline,
         ),
         boxShadow: [
           BoxShadow(
@@ -509,7 +510,7 @@ class _DevotionCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 16,
-                backgroundColor: AppColor.kTan,
+                backgroundColor: colorScheme.secondary,
                 backgroundImage: devotion.authorAvatarUrl != null
                     ? NetworkImage(devotion.authorAvatarUrl!)
                     : null,
@@ -518,8 +519,8 @@ class _DevotionCard extends StatelessWidget {
                         devotion.authorName.isNotEmpty
                             ? devotion.authorName[0].toUpperCase()
                             : '?',
-                        style: const TextStyle(
-                          color: Color(0xFF1C1C1E),
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -580,7 +581,7 @@ class _DevotionCard extends StatelessWidget {
               devotion.verseRef,
               style: TextStyle(
                 fontSize: 12,
-                color: AppColor.kPrimary,
+                color: colorScheme.primary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -593,15 +594,15 @@ class _DevotionCard extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '${devotion.likeCount}',
-                style: TextStyle(fontSize: 12, color: AppColor.kGrayscale40),
+                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
               ),
               const SizedBox(width: 16),
               Icon(Icons.chat_bubble_outline,
-                  size: 16, color: AppColor.kGrayscale40),
+                  size: 16, color: colorScheme.onSurfaceVariant),
               const SizedBox(width: 4),
               Text(
                 '${devotion.commentCount}',
-                style: TextStyle(fontSize: 12, color: AppColor.kGrayscale40),
+                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -638,15 +639,17 @@ class TrendingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      margin: const EdgeInsets.only(top: 0, left: 0, right: 0),
-      width: MediaQuery.of(context).size.width,
-      decoration: BoxDecoration(
-        color: surfaceColor,
+    return ColoredBox(
+      color: colorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space25,
+        AppSpacing.space20,
+        AppSpacing.space25,
+        AppSpacing.space20,
       ),
-      padding: const EdgeInsets.fromLTRB(25.0, 20.0, 25.0, 20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -655,19 +658,16 @@ class TrendingCard extends StatelessWidget {
             children: [
               Icon(
                 IconData(0xe392, fontFamily: 'MaterialIcons'),
-                color: const Color(0xFFFF9447),
+                color: colorScheme.tertiary,
               ),
-              const SizedBox(width: 5.0),
-              Text("Trending Topics",
-                  style: TextStyle(
-                      fontSize: 18,
-                      height: 1.25,
-                      fontFamily: "BigBottom",
-                      fontWeight: FontWeight.normal,
-                      color: Theme.of(context).colorScheme.onSurface)),
+              const SizedBox(width: AppSpacing.space5),
+              Text(
+                'Trending Topics',
+                style: AppTextStyles.sectionTitle(context),
+              ),
             ],
           ),
-          const SizedBox(height: 10.0),
+          const SizedBox(height: AppSpacing.space10),
           for (var i = 0; i < _mockTrendingTopics.length; i++) ...[
             Builder(
               builder: (context) {
@@ -689,39 +689,35 @@ class TrendingCard extends StatelessWidget {
                 );
               },
             ),
-            if (i < _mockTrendingTopics.length - 1) const SizedBox(height: 5.0),
+            if (i < _mockTrendingTopics.length - 1)
+              const SizedBox(height: AppSpacing.space5),
           ],
-          const SizedBox(height: 5.0),
+          const SizedBox(height: AppSpacing.space5),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.black,
-              backgroundColor: Color(0xFFF1F1F1), // Text color
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5),
-              ),
-              elevation: 0, // Subtle shadow
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              minimumSize: const Size(double.infinity, 45), // Full-width button
+              foregroundColor: colorScheme.onSurface,
+              backgroundColor: colorScheme.surfaceContainerHighest,
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.r5),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space16),
+              minimumSize: const Size(double.infinity, 45),
             ),
             onPressed: () => print("Object 1"),
             child: Row(
-              // mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Expanded(
-                  child: const Text(
+                  child: Text(
                     'View More',
-                    style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 18,
-                        fontWeight: FontWeight.normal,
-                        overflow: TextOverflow.ellipsis),
+                    style: AppTextStyles.bodyLarge(context),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(Icons.chevron_right)
+                Icon(Icons.chevron_right, color: colorScheme.onSurface),
               ],
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -746,11 +742,9 @@ class TrendingTopicButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         foregroundColor: colorScheme.onSurface,
         backgroundColor: colorScheme.surfaceContainerHighest,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(5),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.r5),
         elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space16),
         minimumSize: const Size(double.infinity, 45),
       ),
       onPressed: onTap,
@@ -759,42 +753,15 @@ class TrendingTopicButton extends StatelessWidget {
           Expanded(
             child: Text(
               topicName,
-              style: TextStyle(
-                color: colorScheme.onSurface,
-                fontSize: 18,
-                fontWeight: FontWeight.normal,
-                overflow: TextOverflow.ellipsis,
-              ),
+              style: AppTextStyles.sectionTitle(context),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Text(
             '$searches searches',
-            style: TextStyle(
-              color: colorScheme.onSurfaceVariant,
-              fontSize: 14,
-              fontWeight: FontWeight.normal,
-            ),
+            style: AppTextStyles.bodyText(context),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class Background extends StatelessWidget {
-  const Background({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: MediaQuery.of(context).size.width,
-      height: MediaQuery.of(context).size.height,
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        // gradient: LinearGradient(
-        //     colors: [Colors.blue[50]!, Colors.blueAccent, Colors.purple[300]!],
-        //     begin: Alignment.topCenter,
-        //     end: Alignment.bottomCenter),
       ),
     );
   }
@@ -826,7 +793,7 @@ class SearchInput extends StatelessWidget {
         decoration: InputDecoration(
           prefixIcon: Icon(
             Icons.search,
-            color: AppColor.kPrimary,
+            color: colorScheme.primary,
           ),
           filled: true,
           fillColor: colorScheme.surface,
@@ -872,10 +839,10 @@ class IntroCard extends StatelessWidget {
           //     spreadRadius: 0,
           //   )
           // ],
-          gradient: const RadialGradient(
+          gradient: RadialGradient(
         colors: [
-          Color.fromRGBO(126, 154, 216, 0.773),
-          Color.fromRGBO(122, 139, 176, 1)
+          AppColors.brandBlueLight.withValues(alpha: 0.9),
+          AppColors.brandBlue,
         ],
         focal: Alignment.topCenter,
         radius: 2,
@@ -906,59 +873,46 @@ class IntroCard extends StatelessWidget {
 }
 
 class SearchButton extends StatelessWidget {
-  const SearchButton({
-    super.key,
-  });
+  const SearchButton({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(35),
-        ),
-        elevation: 2, // Subtle shadow
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        minimumSize: const Size(double.infinity, 54), // Full-width button
+        foregroundColor: colorScheme.onSurface,
+        backgroundColor: colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.r35),
+        elevation: 2,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space16),
+        minimumSize: const Size(double.infinity, 54),
       ),
-      onPressed: () => {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => SearchPage()),
-        )
-      },
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => SearchPage()),
+      ),
       child: Row(
-        // mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.search,
-          ),
-          const SizedBox(width: 10.0),
+          Icon(Icons.search, color: colorScheme.onSurface),
+          const SizedBox(width: AppSpacing.space10),
           Expanded(
             child: Text(
               'Search for topics & keywords',
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 18,
-                  fontWeight: FontWeight.normal,
-                  overflow: TextOverflow.ellipsis),
+              style: AppTextStyles.bodyLarge(context),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          // const SizedBox(width: 20),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.mic)),
+          IconButton(onPressed: () {}, icon: Icon(Icons.mic, color: colorScheme.onSurface)),
           GestureDetector(
-            onTap: () => {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SigninPage()),
-              )
-            },
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => SigninPage()),
+            ),
             child: CircleAvatar(
-                backgroundColor: const Color.fromRGBO(165, 159, 140, 1),
-                child: Icon(Icons.person)),
-          )
+              backgroundColor: colorScheme.secondary,
+              child: Icon(Icons.person, color: colorScheme.onSecondary),
+            ),
+          ),
         ],
       ),
     );
