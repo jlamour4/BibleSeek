@@ -9,37 +9,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-/// Provider that fetches full text for a single verse in a topic.
-/// GET /api/topics/{topicId}/verses/{itemId}
-/// Returns fullText on success; use verse.previewText as fallback when loading or on error.
-final verseDetailProvider = FutureProvider.autoDispose
-    .family<String, ({String topicId, int itemId})>((ref, params) async {
-  final dio = AuthenticatedDio(Dio()).dio;
-  final uri =
-      '${AppConfig.currentHost}/api/topics/${params.topicId}/verses/${params.itemId}';
-
-  final response = await dio.get(
-    uri,
-    options: Options(
-      headers: <String, String>{'Content-Type': 'application/json'},
-    ),
-  );
-
-  if (response.statusCode != 200) {
-    throw Exception(
-        'Failed to load verse: ${response.statusCode} ${response.statusMessage}');
-  }
-
-  final data = response.data;
-  if (data is Map && data['fullText'] != null) {
-    return data['fullText'] as String;
-  }
-  if (data is Map && data['previewText'] != null) {
-    return data['previewText'] as String;
-  }
-  throw Exception('Invalid response: missing fullText');
-});
-
 /// Provider that fetches verses for a topic. No pagination for now.
 /// TODO: Add pagination when backend supports it (e.g. ?page=1&pageSize=50).
 final topicVersesProvider =
@@ -79,7 +48,8 @@ final topicVersesProvider =
       try {
         final item = rawList[i];
         if (item is! Map) {
-          debugPrint('[TopicVerses] Parse error at index $i: item is not a Map, got ${item.runtimeType}');
+          debugPrint(
+              '[TopicVerses] Parse error at index $i: item is not a Map, got ${item.runtimeType}');
           continue;
         }
         verses.add(Verse.fromJson(Map<String, Object?>.from(item)));
@@ -196,50 +166,97 @@ class _VerseList extends StatefulWidget {
 
 class _VerseListState extends State<_VerseList> {
   final Set<int> _favoritedIds = {};
+  final ScrollController _scrollController = ScrollController();
+  double _scrollOpacity = 0;
+
+  static const double _opacityThreshold = 48;
+  static const double _maxOpacity = 0.25;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final offset = _scrollController.offset;
+    final opacity = (offset / _opacityThreshold).clamp(0.0, 1.0) * _maxOpacity;
+    if (opacity != _scrollOpacity) {
+      setState(() => _scrollOpacity = opacity);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final bottomPadding =
         MediaQuery.of(context).padding.bottom + AppSpacing.space8;
-    return ListView.builder(
-      padding: EdgeInsets.only(
-        top: AppSpacing.space8,
-        bottom: bottomPadding,
-      ),
-      itemCount: widget.verses.length,
-      itemBuilder: (context, index) {
-        final v = widget.verses[index];
-        return VerseCard(
-          displayRef: v.displayRef,
-          previewText: v.previewText,
-          voteCount: v.voteCount,
-          commentCount: 0,
-          isFavorited: _favoritedIds.contains(v.id),
-          onUpvote: () => debugPrint('[VerseCard] upvote id=${v.id}'),
-          onDownvote: () => debugPrint('[VerseCard] downvote id=${v.id}'),
-          onFavorite: () {
-            setState(() {
-              if (_favoritedIds.contains(v.id)) {
-                _favoritedIds.remove(v.id);
-              } else {
-                _favoritedIds.add(v.id);
-              }
-            });
-          },
-          onComment: () => debugPrint('[VerseCard] comment id=${v.id}'),
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => VerseDetailScreen(
-                  topicId: widget.topicId,
-                  topicName: widget.topicName,
-                  verse: v,
-                ),
-              ),
+
+    return Stack(
+      children: [
+        ListView.builder(
+          controller: _scrollController,
+          padding: EdgeInsets.only(
+            top: AppSpacing.space8,
+            bottom: bottomPadding,
+          ),
+          itemCount: widget.verses.length,
+          itemBuilder: (context, index) {
+            final v = widget.verses[index];
+            return VerseCard(
+              displayRef: v.displayRef,
+              previewText: v.previewText,
+              voteCount: v.voteCount,
+              commentCount: 0,
+              isFavorited: _favoritedIds.contains(v.id),
+              onUpvote: () => debugPrint('[VerseCard] upvote id=${v.id}'),
+              onDownvote: () => debugPrint('[VerseCard] downvote id=${v.id}'),
+              onFavorite: () {
+                setState(() {
+                  if (_favoritedIds.contains(v.id)) {
+                    _favoritedIds.remove(v.id);
+                  } else {
+                    _favoritedIds.add(v.id);
+                  }
+                });
+              },
+              onComment: () => debugPrint('[VerseCard] comment id=${v.id}'),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => VerseDetailScreen(
+                      topicId: widget.topicId,
+                      topicName: widget.topicName,
+                      verse: v,
+                    ),
+                  ),
+                );
+              },
             );
           },
-        );
-      },
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: IgnorePointer(
+            child: Opacity(
+              opacity: _scrollOpacity,
+              child: Container(
+                height: 1,
+                color: colorScheme.outline,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -16,9 +16,14 @@ class UserController {
     final GoogleSignInAuthentication googleAuth =
         googleAccount.authentication;
     
-    // In google_sign_in 7.x, accessToken is in GoogleSignInClientAuthorization
+    // In google_sign_in 7.x, accessToken is in GoogleSignInClientAuthorization.
+    // Scopes cannot be null/empty - use email and profile for Firebase Auth.
+    const scopes = [
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+    ];
     final GoogleSignInClientAuthorization? clientAuth =
-        await googleAccount.authorizationClient.authorizationForScopes([]);
+        await googleAccount.authorizationClient.authorizationForScopes(scopes);
 
     // signing in with firebase auth
     final credential = GoogleAuthProvider.credential(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:bible_seek/src/design/app_colors.dart';
 import 'package:bible_seek/src/design/radius.dart';
@@ -6,7 +7,7 @@ import 'package:bible_seek/src/design/spacing.dart';
 import 'package:bible_seek/src/design/text_styles.dart';
 
 /// Reusable verse card used throughout the app.
-/// Displays a verse reference, preview text, and action buttons.
+/// Clean devotional style with verse text as hero, subtle accent bar, unified actions.
 class VerseCard extends StatelessWidget {
   const VerseCard({
     super.key,
@@ -39,6 +40,9 @@ class VerseCard extends StatelessWidget {
   /// Optional. When set, the whole card is tappable (e.g. to open detail).
   final VoidCallback? onTap;
 
+  static const double _accentBarWidth = 3;
+  static const int _verseMaxLines = 5;
+
   @override
   Widget build(BuildContext context) {
     final upIcon = myVote == 1 ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined;
@@ -47,52 +51,77 @@ class VerseCard extends StatelessWidget {
 
     final colorScheme = Theme.of(context).colorScheme;
 
-    Widget cardChild = Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.space14,
-          AppSpacing.space10,
-          AppSpacing.space14,
-          AppSpacing.space10,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              displayRef,
-              style: AppTextStyles.verseRef(context).copyWith(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.primary,
+    Widget cardChild = IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Left accent bar
+          Container(
+            width: _accentBarWidth,
+            margin: const EdgeInsets.only(
+              left: AppSpacing.space12,
+              top: AppSpacing.space12,
+              bottom: AppSpacing.space12,
+            ),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.35),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(2),
+                bottom: Radius.circular(2),
               ),
             ),
-            const SizedBox(height: AppSpacing.space6),
-            Text(
-              previewText,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.bodyText(context),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.space12,
+                AppSpacing.space10,
+                AppSpacing.space14,
+                AppSpacing.space10,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    displayRef,
+                    style: AppTextStyles.metaText(context).copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space8),
+                  Text(
+                    previewText,
+                    maxLines: _verseMaxLines,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.kameron(
+                      fontSize: 16,
+                      height: 1.5,
+                      fontWeight: FontWeight.normal,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space12),
+                  _ActionRow(
+                    upIcon: upIcon,
+                    downIcon: downIcon,
+                    voteCount: voteCount,
+                    commentCount: commentCount,
+                    isFavorited: isFavorited,
+                    onUpvote: onUpvote,
+                    onDownvote: onDownvote,
+                    onComments: onComment,
+                    onFavorite: onFavorite,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: AppSpacing.space10),
-            Divider(
-              height: 1,
-              thickness: 1,
-              color: colorScheme.outline.withValues(alpha: 0.25),
-            ),
-            const SizedBox(height: AppSpacing.space8),
-            _ActionRow(
-              upIcon: upIcon,
-              downIcon: downIcon,
-              voteCount: voteCount,
-              commentCount: commentCount,
-              isFavorited: isFavorited,
-              onUpvote: onUpvote,
-              onDownvote: onDownvote,
-              onComments: onComment,
-              onFavorite: onFavorite,
-            ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
 
     if (onTap != null) {
       cardChild = Material(
@@ -150,45 +179,42 @@ class _ActionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final mutedColor = colorScheme.onSurfaceVariant;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space8,
-        vertical: AppSpacing.space6,
-      ),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: AppRadius.r24,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _MiniAction(
-            icon: upIcon,
-            label: _formatCount(voteCount),
-            onTap: onUpvote,
-          ),
-          const SizedBox(width: AppSpacing.space6),
-          _MiniAction(
-            icon: downIcon,
-            label: '',
-            onTap: onDownvote,
-          ),
-          const SizedBox(width: AppSpacing.space10),
-          _MiniAction(
-            icon: Icons.chat_bubble_outline,
-            label: commentCount > 0 ? _formatCount(commentCount) : '',
-            onTap: onComments,
-          ),
-          const SizedBox(width: AppSpacing.space10),
-          _MiniAction(
-            icon: isFavorited ? Icons.favorite : Icons.favorite_border,
-            label: '',
-            onTap: onFavorite,
-            iconColor: isFavorited ? AppColors.likeRed : null,
-          ),
-        ],
-      ),
+    return Row(
+      children: [
+        _MiniAction(
+          icon: upIcon,
+          label: _formatCount(voteCount),
+          onTap: onUpvote,
+          iconColor: mutedColor,
+          labelColor: mutedColor,
+          fontSize: 11,
+        ),
+        const SizedBox(width: AppSpacing.space12),
+        _MiniAction(
+          icon: downIcon,
+          label: '',
+          onTap: onDownvote,
+          iconColor: mutedColor,
+        ),
+        const SizedBox(width: AppSpacing.space12),
+        _MiniAction(
+          icon: Icons.chat_bubble_outline,
+          label: commentCount > 0 ? _formatCount(commentCount) : '',
+          onTap: onComments,
+          iconColor: mutedColor,
+          labelColor: mutedColor,
+          fontSize: 11,
+        ),
+        const SizedBox(width: AppSpacing.space12),
+        _MiniAction(
+          icon: isFavorited ? Icons.favorite : Icons.favorite_border,
+          label: '',
+          onTap: onFavorite,
+          iconColor: isFavorited ? AppColors.likeRed : mutedColor,
+        ),
+      ],
     );
   }
 }
@@ -198,32 +224,43 @@ class _MiniAction extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final Color? iconColor;
+  final Color? labelColor;
+  final double? fontSize;
 
   const _MiniAction({
     required this.icon,
     required this.label,
     required this.onTap,
     this.iconColor,
+    this.labelColor,
+    this.fontSize,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final effectiveLabelColor = labelColor ?? colorScheme.onSurfaceVariant;
+
     return InkWell(
       borderRadius: AppRadius.r24,
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space8,
-          vertical: AppSpacing.space6,
+          horizontal: AppSpacing.space6,
+          vertical: AppSpacing.space4,
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: iconColor),
+            Icon(icon, size: 18, color: iconColor ?? colorScheme.onSurfaceVariant),
             if (label.isNotEmpty) ...[
-              const SizedBox(width: AppSpacing.space6),
+              const SizedBox(width: AppSpacing.space5),
               Text(
                 label,
-                style: AppTextStyles.metaText(context),
+                style: AppTextStyles.metaText(context).copyWith(
+                  fontSize: fontSize ?? 12,
+                  color: effectiveLabelColor,
+                ),
               ),
             ],
           ],

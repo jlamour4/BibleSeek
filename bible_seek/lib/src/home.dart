@@ -5,6 +5,7 @@ import 'package:bible_seek/src/design/text_styles.dart';
 import 'package:bible_seek/src/search.dart';
 import 'package:bible_seek/src/signin.dart';
 import 'package:bible_seek/src/topic_verses_screen.dart';
+import 'package:bible_seek/src/user_profile_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -224,14 +225,26 @@ class _StickySearchBar extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.space4),
                 GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => SigninPage()),
-                  ),
+                  onTap: () {
+                    final isSignedIn = FirebaseAuth.instance.currentUser != null;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => isSignedIn
+                            ? const UserProfilePage()
+                            : SigninPage(),
+                      ),
+                    );
+                  },
                   child: CircleAvatar(
                     radius: 18,
                     backgroundColor: colorScheme.secondary,
-                    child: Icon(Icons.person, color: colorScheme.onSecondary),
+                    backgroundImage: FirebaseAuth.instance.currentUser?.photoURL != null
+                        ? NetworkImage(FirebaseAuth.instance.currentUser!.photoURL!)
+                        : null,
+                    child: FirebaseAuth.instance.currentUser?.photoURL == null
+                        ? Icon(Icons.person, color: colorScheme.onSecondary)
+                        : null,
                   ),
                 ),
               ],
@@ -904,13 +917,25 @@ class SearchButton extends StatelessWidget {
           ),
           IconButton(onPressed: () {}, icon: Icon(Icons.mic, color: colorScheme.onSurface)),
           GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => SigninPage()),
-            ),
+            onTap: () {
+              final isSignedIn = FirebaseAuth.instance.currentUser != null;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => isSignedIn
+                      ? const UserProfilePage()
+                      : SigninPage(),
+                ),
+              );
+            },
             child: CircleAvatar(
               backgroundColor: colorScheme.secondary,
-              child: Icon(Icons.person, color: colorScheme.onSecondary),
+              backgroundImage: FirebaseAuth.instance.currentUser?.photoURL != null
+                  ? NetworkImage(FirebaseAuth.instance.currentUser!.photoURL!)
+                  : null,
+              child: FirebaseAuth.instance.currentUser?.photoURL == null
+                  ? Icon(Icons.person, color: colorScheme.onSecondary)
+                  : null,
             ),
           ),
         ],
