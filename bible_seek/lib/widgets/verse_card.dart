@@ -22,6 +22,7 @@ class VerseCard extends StatelessWidget {
     required this.onComment,
     this.myVote,
     this.onTap,
+    this.topicLabel,
   });
 
   final String displayRef;
@@ -39,6 +40,9 @@ class VerseCard extends StatelessWidget {
 
   /// Optional. When set, the whole card is tappable (e.g. to open detail).
   final VoidCallback? onTap;
+
+  /// Optional. When set, shows a topic chip/label (e.g. "Forgiveness") near the reference.
+  final String? topicLabel;
 
   static const double _accentBarWidth = 3;
   static const int _verseMaxLines = 5;
@@ -83,13 +87,45 @@ class VerseCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    displayRef,
-                    style: AppTextStyles.metaText(context).copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          displayRef,
+                          style: AppTextStyles.metaText(context).copyWith(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      if (topicLabel != null && topicLabel!.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 160),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              topicLabel!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.metaText(context).copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: AppSpacing.space8),
                   Text(

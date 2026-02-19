@@ -2,6 +2,7 @@ import 'package:bible_seek/src/api/authenticated_client.dart';
 import 'package:bible_seek/src/config/config.dart';
 import 'package:bible_seek/src/design/spacing.dart';
 import 'package:bible_seek/src/design/text_styles.dart';
+import 'package:bible_seek/src/providers/saved_provider.dart';
 import 'package:bible_seek/src/verse.dart';
 import 'package:bible_seek/src/verse_detail_screen.dart';
 import 'package:bible_seek/widgets/verse_card.dart';
@@ -9,10 +10,23 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+/// Normalizes favorite-related JSON keys to isFavorited. Backends may use
+/// favorited, isFavourited, favourite, is_favorited, or favorite.
+void _normalizeFavoriteKey(Map<String, Object?> map) {
+  if (map.containsKey('isFavorited')) return;
+  for (final key in ['favorited', 'isFavourited', 'favourite', 'is_favorited', 'favorite']) {
+    if (map.containsKey(key)) {
+      map['isFavorited'] = map[key];
+      return;
+    }
+  }
+}
+
 /// Provider that fetches verses for a topic. No pagination for now.
 /// TODO: Add pagination when backend supports it (e.g. ?page=1&pageSize=50).
 final topicVersesProvider =
     FutureProvider.autoDispose.family<List<Verse>, String>((ref, topicId) async {
+  if (topicId.isEmpty) return [];
   final dio = AuthenticatedDio(Dio()).dio;
   final uri = '${AppConfig.currentHost}/api/topics/$topicId/verses';
 
@@ -52,7 +66,9 @@ final topicVersesProvider =
               '[TopicVerses] Parse error at index $i: item is not a Map, got ${item.runtimeType}');
           continue;
         }
-        verses.add(Verse.fromJson(Map<String, Object?>.from(item)));
+        final map = Map<String, Object?>.from(item);
+        _normalizeFavoriteKey(map);
+        verses.add(Verse.fromJson(map));
       } catch (e, stack) {
         debugPrint('[TopicVerses] Parse error at index $i: $e');
         debugPrint('[TopicVerses] Raw item: ${rawList[i]}');
@@ -86,12 +102,36 @@ class TopicVersesScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final versesAsync = ref.watch(topicVersesProvider(topicId));
+    final savedTopicsAsync = ref.watch(savedTopicsProvider);
+    final savedOverrides = ref.watch(savedTopicOverridesProvider);
     final colorScheme = Theme.of(context).colorScheme;
+    final savedTopics = savedTopicsAsync.asData?.value ?? [];
+    final isSaved = isTopicSaved(savedTopics, savedOverrides, topicId);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(topicName),
         actions: [
+          IconButton(
+            icon: Icon(isSaved ? Icons.bookmark : Icons.bookmark_border),
+            onPressed: topicId.isEmpty
+                ? null
+                : () async {
+                    final nextSaved = !isSaved;
+                    ref.read(savedTopicOverridesProvider.notifier).set(topicId, nextSaved);
+                    try {
+                      await toggleSaveTopic(topicId);
+                      ref.invalidate(savedTopicsProvider);
+                    } catch (_) {
+                      if (context.mounted) {
+                        ref.read(savedTopicOverridesProvider.notifier).remove(topicId);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Failed to save topic')),
+                        );
+                      }
+                    }
+                  },
+          ),
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () => debugPrint('[TopicVersesScreen] search'),
@@ -142,6 +182,7 @@ class TopicVersesScreen extends HookConsumerWidget {
             verses: verses,
             topicId: topicId,
             topicName: topicName,
+            onFavoriteChange: () => ref.invalidate(savedPassagesProvider),
           );
         },
       ),
@@ -149,23 +190,24 @@ class TopicVersesScreen extends HookConsumerWidget {
   }
 }
 
-class _VerseList extends StatefulWidget {
+class _VerseList extends ConsumerStatefulWidget {
   const _VerseList({
     required this.verses,
     required this.topicId,
     required this.topicName,
+    this.onFavoriteChange,
   });
 
   final List<Verse> verses;
   final String topicId;
   final String topicName;
+  final VoidCallback? onFavoriteChange;
 
   @override
-  State<_VerseList> createState() => _VerseListState();
+  ConsumerState<_VerseList> createState() => _VerseListState();
 }
 
-class _VerseListState extends State<_VerseList> {
-  final Set<int> _favoritedIds = {};
+class _VerseListState extends ConsumerState<_VerseList> {
   final ScrollController _scrollController = ScrollController();
   double _scrollOpacity = 0;
 
@@ -193,11 +235,31 @@ class _VerseListState extends State<_VerseList> {
     }
   }
 
+  Future<void> _toggleFavorite(Verse v) async {
+    final overrides = ref.read(favoriteOverridesProvider);
+    final wasFavorited = isVerseFavorited(v, overrides);
+    ref.read(favoriteOverridesProvider.notifier).updateMap((m) {
+      m[v.id] = !wasFavorited;
+      return m;
+    });
+    try {
+      await toggleFavoriteVerse(v.id);
+      widget.onFavoriteChange?.call();
+    } catch (_) {
+      if (mounted) {
+        ref.read(favoriteOverridesProvider.notifier).remove(v.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update favorite')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final bottomPadding =
-        MediaQuery.of(context).padding.bottom + AppSpacing.space8;
+        MediaQuery.of(context).padding.bottom + AppSpacing.space24;
 
     return Stack(
       children: [
@@ -210,23 +272,17 @@ class _VerseListState extends State<_VerseList> {
           itemCount: widget.verses.length,
           itemBuilder: (context, index) {
             final v = widget.verses[index];
+            final overrides = ref.watch(favoriteOverridesProvider);
             return VerseCard(
+              key: ValueKey(v.id),
               displayRef: v.displayRef,
               previewText: v.previewText,
               voteCount: v.voteCount,
               commentCount: 0,
-              isFavorited: _favoritedIds.contains(v.id),
+              isFavorited: isVerseFavorited(v, overrides),
               onUpvote: () => debugPrint('[VerseCard] upvote id=${v.id}'),
               onDownvote: () => debugPrint('[VerseCard] downvote id=${v.id}'),
-              onFavorite: () {
-                setState(() {
-                  if (_favoritedIds.contains(v.id)) {
-                    _favoritedIds.remove(v.id);
-                  } else {
-                    _favoritedIds.add(v.id);
-                  }
-                });
-              },
+              onFavorite: () => _toggleFavorite(v),
               onComment: () => debugPrint('[VerseCard] comment id=${v.id}'),
               onTap: () {
                 Navigator.of(context).push(

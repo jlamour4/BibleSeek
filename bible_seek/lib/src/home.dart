@@ -2,6 +2,7 @@ import 'package:bible_seek/src/design/app_colors.dart';
 import 'package:bible_seek/src/design/radius.dart';
 import 'package:bible_seek/src/design/spacing.dart';
 import 'package:bible_seek/src/design/text_styles.dart';
+import 'package:bible_seek/src/saved_screen.dart';
 import 'package:bible_seek/src/search.dart';
 import 'package:bible_seek/src/signin.dart';
 import 'package:bible_seek/src/topic_verses_screen.dart';
@@ -40,7 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
         items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.favorite_border), label: 'Favorites'),
+                icon: Icon(Icons.bookmark_outline), label: 'Saved'),
             BottomNavigationBarItem(
                 icon: Icon(Icons.mode_comment_outlined), label: 'Messages'),
             BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'More'),
@@ -50,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
         index: _currentIndex,
         children: const [
           _HomeTab(),
-          FavoritesScreen(),
+          SavedScreen(),
           MessagesScreen(),
           MoreScreen(),
         ],
@@ -251,17 +252,6 @@ class _StickySearchBar extends StatelessWidget {
             ),
           ),
         ),
-    );
-  }
-}
-
-class FavoritesScreen extends StatelessWidget {
-  const FavoritesScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Favorites')),
     );
   }
 }

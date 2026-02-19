@@ -1,5 +1,9 @@
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  errors:
+    invalid_annotation_target: ignore  # Freezed transposes @JsonKey to generated code
+
 linter:
   rules:
     avoid_print: false

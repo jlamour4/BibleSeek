@@ -13,6 +13,9 @@ _Verse _$VerseFromJson(Map<String, dynamic> json) => _Verse(
       displayRef: json['displayRef'] as String,
       previewText: json['previewText'] as String,
       voteCount: (json['voteCount'] as num).toInt(),
+      isFavorited: json['isFavorited'] == null
+          ? false
+          : _isFavoritedFromJson(json['isFavorited']),
     );
 
 Map<String, dynamic> _$VerseToJson(_Verse instance) => <String, dynamic>{
@@ -22,4 +25,5 @@ Map<String, dynamic> _$VerseToJson(_Verse instance) => <String, dynamic>{
       'displayRef': instance.displayRef,
       'previewText': instance.previewText,
       'voteCount': instance.voteCount,
+      'isFavorited': instance.isFavorited,
     };

@@ -20,6 +20,8 @@ mixin _$Verse {
   String get displayRef;
   String get previewText;
   int get voteCount;
+  @JsonKey(fromJson: _isFavoritedFromJson)
+  bool get isFavorited;
 
   /// Create a copy of Verse
   /// with the given fields replaced by the non-null parameter values.
@@ -46,17 +48,19 @@ mixin _$Verse {
             (identical(other.previewText, previewText) ||
                 other.previewText == previewText) &&
             (identical(other.voteCount, voteCount) ||
-                other.voteCount == voteCount));
+                other.voteCount == voteCount) &&
+            (identical(other.isFavorited, isFavorited) ||
+                other.isFavorited == isFavorited));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, startVerseCode, endVerseCode,
-      displayRef, previewText, voteCount);
+      displayRef, previewText, voteCount, isFavorited);
 
   @override
   String toString() {
-    return 'Verse(id: $id, startVerseCode: $startVerseCode, endVerseCode: $endVerseCode, displayRef: $displayRef, previewText: $previewText, voteCount: $voteCount)';
+    return 'Verse(id: $id, startVerseCode: $startVerseCode, endVerseCode: $endVerseCode, displayRef: $displayRef, previewText: $previewText, voteCount: $voteCount, isFavorited: $isFavorited)';
   }
 }
 
@@ -71,7 +75,8 @@ abstract mixin class $VerseCopyWith<$Res> {
       int? endVerseCode,
       String displayRef,
       String previewText,
-      int voteCount});
+      int voteCount,
+      @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited});
 }
 
 /// @nodoc
@@ -92,6 +97,7 @@ class _$VerseCopyWithImpl<$Res> implements $VerseCopyWith<$Res> {
     Object? displayRef = null,
     Object? previewText = null,
     Object? voteCount = null,
+    Object? isFavorited = null,
   }) {
     return _then(_self.copyWith(
       id: null == id
@@ -118,6 +124,10 @@ class _$VerseCopyWithImpl<$Res> implements $VerseCopyWith<$Res> {
           ? _self.voteCount
           : voteCount // ignore: cast_nullable_to_non_nullable
               as int,
+      isFavorited: null == isFavorited
+          ? _self.isFavorited
+          : isFavorited // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -215,16 +225,28 @@ extension VersePatterns on Verse {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(int id, int startVerseCode, int? endVerseCode,
-            String displayRef, String previewText, int voteCount)?
+    TResult Function(
+            int id,
+            int startVerseCode,
+            int? endVerseCode,
+            String displayRef,
+            String previewText,
+            int voteCount,
+            @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _Verse() when $default != null:
-        return $default(_that.id, _that.startVerseCode, _that.endVerseCode,
-            _that.displayRef, _that.previewText, _that.voteCount);
+        return $default(
+            _that.id,
+            _that.startVerseCode,
+            _that.endVerseCode,
+            _that.displayRef,
+            _that.previewText,
+            _that.voteCount,
+            _that.isFavorited);
       case _:
         return orElse();
     }
@@ -245,15 +267,27 @@ extension VersePatterns on Verse {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(int id, int startVerseCode, int? endVerseCode,
-            String displayRef, String previewText, int voteCount)
+    TResult Function(
+            int id,
+            int startVerseCode,
+            int? endVerseCode,
+            String displayRef,
+            String previewText,
+            int voteCount,
+            @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _Verse():
-        return $default(_that.id, _that.startVerseCode, _that.endVerseCode,
-            _that.displayRef, _that.previewText, _that.voteCount);
+        return $default(
+            _that.id,
+            _that.startVerseCode,
+            _that.endVerseCode,
+            _that.displayRef,
+            _that.previewText,
+            _that.voteCount,
+            _that.isFavorited);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -273,15 +307,27 @@ extension VersePatterns on Verse {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(int id, int startVerseCode, int? endVerseCode,
-            String displayRef, String previewText, int voteCount)?
+    TResult? Function(
+            int id,
+            int startVerseCode,
+            int? endVerseCode,
+            String displayRef,
+            String previewText,
+            int voteCount,
+            @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _Verse() when $default != null:
-        return $default(_that.id, _that.startVerseCode, _that.endVerseCode,
-            _that.displayRef, _that.previewText, _that.voteCount);
+        return $default(
+            _that.id,
+            _that.startVerseCode,
+            _that.endVerseCode,
+            _that.displayRef,
+            _that.previewText,
+            _that.voteCount,
+            _that.isFavorited);
       case _:
         return null;
     }
@@ -297,7 +343,8 @@ class _Verse implements Verse {
       this.endVerseCode,
       required this.displayRef,
       required this.previewText,
-      required this.voteCount});
+      required this.voteCount,
+      @JsonKey(fromJson: _isFavoritedFromJson) this.isFavorited = false});
   factory _Verse.fromJson(Map<String, dynamic> json) => _$VerseFromJson(json);
 
   @override
@@ -312,6 +359,9 @@ class _Verse implements Verse {
   final String previewText;
   @override
   final int voteCount;
+  @override
+  @JsonKey(fromJson: _isFavoritedFromJson)
+  final bool isFavorited;
 
   /// Create a copy of Verse
   /// with the given fields replaced by the non-null parameter values.
@@ -343,17 +393,19 @@ class _Verse implements Verse {
             (identical(other.previewText, previewText) ||
                 other.previewText == previewText) &&
             (identical(other.voteCount, voteCount) ||
-                other.voteCount == voteCount));
+                other.voteCount == voteCount) &&
+            (identical(other.isFavorited, isFavorited) ||
+                other.isFavorited == isFavorited));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, startVerseCode, endVerseCode,
-      displayRef, previewText, voteCount);
+      displayRef, previewText, voteCount, isFavorited);
 
   @override
   String toString() {
-    return 'Verse(id: $id, startVerseCode: $startVerseCode, endVerseCode: $endVerseCode, displayRef: $displayRef, previewText: $previewText, voteCount: $voteCount)';
+    return 'Verse(id: $id, startVerseCode: $startVerseCode, endVerseCode: $endVerseCode, displayRef: $displayRef, previewText: $previewText, voteCount: $voteCount, isFavorited: $isFavorited)';
   }
 }
 
@@ -369,7 +421,8 @@ abstract mixin class _$VerseCopyWith<$Res> implements $VerseCopyWith<$Res> {
       int? endVerseCode,
       String displayRef,
       String previewText,
-      int voteCount});
+      int voteCount,
+      @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited});
 }
 
 /// @nodoc
@@ -390,6 +443,7 @@ class __$VerseCopyWithImpl<$Res> implements _$VerseCopyWith<$Res> {
     Object? displayRef = null,
     Object? previewText = null,
     Object? voteCount = null,
+    Object? isFavorited = null,
   }) {
     return _then(_Verse(
       id: null == id
@@ -416,6 +470,10 @@ class __$VerseCopyWithImpl<$Res> implements _$VerseCopyWith<$Res> {
           ? _self.voteCount
           : voteCount // ignore: cast_nullable_to_non_nullable
               as int,
+      isFavorited: null == isFavorited
+          ? _self.isFavorited
+          : isFavorited // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }

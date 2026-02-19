@@ -34,8 +34,8 @@ class UserController {
     final userCredential =
         await FirebaseAuth.instance.signInWithCredential(credential);
 
-    await saveUserToBackend(user);
-
+    // User profile is loaded via POST /api/auth/session (currentUserProvider)
+    // when profile or other consumers are read.
     return userCredential.user;
   }
 

@@ -4,6 +4,7 @@ import 'package:bible_seek/src/design/app_colors.dart';
 import 'package:bible_seek/src/design/radius.dart';
 import 'package:bible_seek/src/design/spacing.dart';
 import 'package:bible_seek/src/design/text_styles.dart';
+import 'package:bible_seek/src/providers/saved_provider.dart';
 import 'package:bible_seek/src/verse.dart';
 import 'package:bible_seek/widgets/expandable_text.dart';
 import 'package:dio/dio.dart';
@@ -66,7 +67,27 @@ class VerseDetailScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final v = verse;
     final isExpanded = useState(false);
-    final isFavorited = useState(false);
+    final overrides = ref.watch(favoriteOverridesProvider);
+    final isFavorited = isVerseFavorited(v, overrides);
+
+    Future<void> handleFavorite() async {
+      final next = !isFavorited;
+      ref.read(favoriteOverridesProvider.notifier).updateMap((m) {
+        m[v.id] = next;
+        return m;
+      });
+      try {
+        await toggleFavoriteVerse(v.id);
+        ref.invalidate(savedPassagesProvider);
+      } catch (_) {
+        if (context.mounted) {
+          ref.read(favoriteOverridesProvider.notifier).remove(v.id);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to update favorite')),
+          );
+        }
+      }
+    }
 
     final fullTextAsync = ref.watch(verseDetailProvider((
       topicId: topicId,
@@ -88,10 +109,10 @@ class VerseDetailScreen extends HookConsumerWidget {
         actions: [
           IconButton(
             icon: Icon(
-              isFavorited.value ? Icons.favorite : Icons.favorite_border,
-              color: isFavorited.value ? AppColors.likeRed : null,
+              isFavorited ? Icons.favorite : Icons.favorite_border,
+              color: isFavorited ? AppColors.likeRed : null,
             ),
-            onPressed: () => isFavorited.value = !isFavorited.value,
+            onPressed: handleFavorite,
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -125,11 +146,11 @@ class VerseDetailScreen extends HookConsumerWidget {
                 onExpandChanged: (expanded) => isExpanded.value = expanded,
                 voteCount: v.voteCount,
                 commentCount: 0,
-                isFavorited: isFavorited.value,
+                isFavorited: isFavorited,
                 onUpvote: () => debugPrint('[VerseDetail] upvote id=${v.id}'),
                 onDownvote: () => debugPrint('[VerseDetail] downvote id=${v.id}'),
                 onComment: () => debugPrint('[VerseDetail] comment id=${v.id}'),
-                onFavorite: () => isFavorited.value = !isFavorited.value,
+                onFavorite: handleFavorite,
               ),
               const Divider(height: AppSpacing.space32),
               _CommentsPlaceholder(),
