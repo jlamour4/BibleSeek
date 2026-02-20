@@ -1,6 +1,7 @@
 import 'package:bible_seek/src/design/spacing.dart';
 import 'package:bible_seek/src/design/text_styles.dart';
 import 'package:bible_seek/src/providers/saved_provider.dart';
+import 'package:bible_seek/src/verse.dart';
 import 'package:bible_seek/src/topic_verses_screen.dart';
 import 'package:bible_seek/src/verse_detail_screen.dart';
 import 'package:bible_seek/widgets/verse_card.dart';
@@ -97,16 +98,21 @@ class SavedPassagesTab extends ConsumerWidget {
               ],
             );
           }
+          final voteOverrides = ref.watch(voteOverridesProvider);
           return ListView.builder(
             padding: EdgeInsets.only(bottom: bottomPadding, top: 8),
             itemCount: passages.length,
             itemBuilder: (context, index) {
               final p = passages[index];
+              final (voteCount, myVote) = verseVoteState(p.verse, voteOverrides);
               return _SavedPassageCard(
                 passage: p,
+                voteCount: voteCount,
+                myVote: myVote,
                 isFavorited: !locallyUnsaved.contains(p.verse.id),
-                onUnsave: () => _handleUnsave(context, ref, p.verse.id),
-                onResave: () => _handleResave(ref, p.verse.id),
+                onUnsave: () => _handleUnsave(context, ref, p.verse),
+                onResave: () => _handleResave(ref, p.verse),
+                onVote: (isUpvote) => _handleVote(context, ref, p.verse, isUpvote),
               );
             },
           );
@@ -115,19 +121,38 @@ class SavedPassagesTab extends ConsumerWidget {
     );
   }
 
-  void _handleUnsave(BuildContext context, WidgetRef ref, int verseId) {
-    ref.read(locallyUnsavedVerseIdsProvider.notifier).add(verseId);
-    ref.read(favoriteOverridesProvider.notifier).set(verseId, false);
-    toggleFavoriteVerse(verseId);
+  void _handleUnsave(BuildContext context, WidgetRef ref, Verse verse) {
+    ref.read(locallyUnsavedVerseIdsProvider.notifier).add(verse.id);
+    ref.read(favoriteOverridesProvider.notifier).set(verse.id, false);
+    toggleFavoriteVerse(topicVerseIdForApi(verse));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Removed from saved. Reload to update.')),
     );
   }
 
-  void _handleResave(WidgetRef ref, int verseId) {
-    ref.read(locallyUnsavedVerseIdsProvider.notifier).remove(verseId);
-    ref.read(favoriteOverridesProvider.notifier).set(verseId, true);
-    toggleFavoriteVerse(verseId);
+  void _handleResave(WidgetRef ref, Verse verse) {
+    ref.read(locallyUnsavedVerseIdsProvider.notifier).remove(verse.id);
+    ref.read(favoriteOverridesProvider.notifier).set(verse.id, true);
+    toggleFavoriteVerse(topicVerseIdForApi(verse));
+  }
+
+  Future<void> _handleVote(BuildContext context, WidgetRef ref, Verse verse, bool isUpvote) async {
+    final voteOverrides = ref.read(voteOverridesProvider);
+    final (count, myVote) = verseVoteState(verse, voteOverrides);
+    final (optCount, optVote) = optimisticVote(count, myVote, isUpvote);
+    ref.read(voteOverridesProvider.notifier).set(verse.id, optCount, optVote);
+    try {
+      final result = await voteVerse(topicVerseIdForApi(verse), myVote, isUpvote);
+      ref.read(voteOverridesProvider.notifier).set(verse.id, result.voteCount, result.myVote);
+    } catch (e, st) {
+      if (context.mounted) {
+        ref.read(voteOverridesProvider.notifier).remove(verse.id);
+        debugPrint('[Vote] Error: $e\n$st');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(formatVoteError(e, st))),
+        );
+      }
+    }
   }
 }
 
@@ -213,15 +238,21 @@ class SavedTopicsTab extends ConsumerWidget {
 class _SavedPassageCard extends StatelessWidget {
   const _SavedPassageCard({
     required this.passage,
+    required this.voteCount,
+    required this.myVote,
     required this.isFavorited,
     required this.onUnsave,
     required this.onResave,
+    required this.onVote,
   });
 
   final SavedPassage passage;
+  final int voteCount;
+  final int? myVote;
   final bool isFavorited;
   final VoidCallback onUnsave;
   final VoidCallback onResave;
+  final void Function(bool isUpvote) onVote;
 
   @override
   Widget build(BuildContext context) {
@@ -229,12 +260,13 @@ class _SavedPassageCard extends StatelessWidget {
     return VerseCard(
       displayRef: v.displayRef,
       previewText: v.previewText,
-      voteCount: v.voteCount,
+      voteCount: voteCount,
+      myVote: myVote,
       commentCount: 0,
       isFavorited: isFavorited,
       topicLabel: passage.topicName.isNotEmpty ? passage.topicName : null,
-      onUpvote: () {},
-      onDownvote: () {},
+      onUpvote: () => onVote(true),
+      onDownvote: () => onVote(false),
       onFavorite: isFavorited ? onUnsave : onResave,
       onComment: () {},
       onTap: () {

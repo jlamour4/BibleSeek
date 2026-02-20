@@ -68,7 +68,9 @@ class VerseDetailScreen extends HookConsumerWidget {
     final v = verse;
     final isExpanded = useState(false);
     final overrides = ref.watch(favoriteOverridesProvider);
+    final voteOverrides = ref.watch(voteOverridesProvider);
     final isFavorited = isVerseFavorited(v, overrides);
+    final (voteCount, myVote) = verseVoteState(v, voteOverrides);
 
     Future<void> handleFavorite() async {
       final next = !isFavorited;
@@ -77,13 +79,30 @@ class VerseDetailScreen extends HookConsumerWidget {
         return m;
       });
       try {
-        await toggleFavoriteVerse(v.id);
+        await toggleFavoriteVerse(topicVerseIdForApi(v));
         ref.invalidate(savedPassagesProvider);
       } catch (_) {
         if (context.mounted) {
           ref.read(favoriteOverridesProvider.notifier).remove(v.id);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Failed to update favorite')),
+          );
+        }
+      }
+    }
+
+    Future<void> handleVote(bool isUpvote) async {
+      final (optCount, optVote) = optimisticVote(voteCount, myVote, isUpvote);
+      ref.read(voteOverridesProvider.notifier).set(v.id, optCount, optVote);
+      try {
+        final result = await voteVerse(topicVerseIdForApi(v), myVote, isUpvote);
+        ref.read(voteOverridesProvider.notifier).set(v.id, result.voteCount, result.myVote);
+      } catch (e, st) {
+        if (context.mounted) {
+          ref.read(voteOverridesProvider.notifier).remove(v.id);
+          debugPrint('[Vote] Error: $e\n$st');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(formatVoteError(e, st))),
           );
         }
       }
@@ -144,11 +163,12 @@ class VerseDetailScreen extends HookConsumerWidget {
                 isLoading: isLoading,
                 isExpanded: isExpanded.value,
                 onExpandChanged: (expanded) => isExpanded.value = expanded,
-                voteCount: v.voteCount,
+                voteCount: voteCount,
+                myVote: myVote,
                 commentCount: 0,
                 isFavorited: isFavorited,
-                onUpvote: () => debugPrint('[VerseDetail] upvote id=${v.id}'),
-                onDownvote: () => debugPrint('[VerseDetail] downvote id=${v.id}'),
+                onUpvote: () => handleVote(true),
+                onDownvote: () => handleVote(false),
                 onComment: () => debugPrint('[VerseDetail] comment id=${v.id}'),
                 onFavorite: handleFavorite,
               ),
@@ -171,6 +191,7 @@ class _VerseDetailCard extends StatelessWidget {
     required this.isExpanded,
     required this.onExpandChanged,
     required this.voteCount,
+    this.myVote,
     required this.commentCount,
     required this.isFavorited,
     required this.onUpvote,
@@ -185,6 +206,7 @@ class _VerseDetailCard extends StatelessWidget {
   final bool isExpanded;
   final ValueChanged<bool> onExpandChanged;
   final int voteCount;
+  final int? myVote;
   final int commentCount;
   final bool isFavorited;
   final VoidCallback onUpvote;
@@ -272,6 +294,7 @@ class _VerseDetailCard extends StatelessWidget {
                     const SizedBox(height: AppSpacing.space12),
                     _VerseActionsRow(
                       voteCount: voteCount,
+                      myVote: myVote,
                       commentCount: commentCount,
                       isFavorited: isFavorited,
                       onUpvote: onUpvote,
@@ -308,6 +331,7 @@ class _VerseDetailCard extends StatelessWidget {
 class _VerseActionsRow extends StatelessWidget {
   const _VerseActionsRow({
     required this.voteCount,
+    this.myVote,
     required this.commentCount,
     required this.isFavorited,
     required this.onUpvote,
@@ -317,6 +341,7 @@ class _VerseActionsRow extends StatelessWidget {
   });
 
   final int voteCount;
+  final int? myVote;
   final int commentCount;
   final bool isFavorited;
   final VoidCallback onUpvote;
@@ -334,11 +359,13 @@ class _VerseActionsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final mutedColor = colorScheme.onSurfaceVariant;
+    final upIcon = myVote == 1 ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined;
+    final downIcon = myVote == -1 ? Icons.thumb_down_alt : Icons.thumb_down_alt_outlined;
 
     return Row(
       children: [
         _MiniAction(
-          icon: Icons.thumb_up_alt_outlined,
+          icon: upIcon,
           label: _formatCount(voteCount),
           onTap: onUpvote,
           iconColor: mutedColor,
@@ -347,7 +374,7 @@ class _VerseActionsRow extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.space12),
         _MiniAction(
-          icon: Icons.thumb_down_alt_outlined,
+          icon: downIcon,
           label: '',
           onTap: onDownvote,
           iconColor: mutedColor,

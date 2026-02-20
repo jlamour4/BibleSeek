@@ -32,8 +32,15 @@ class _MyHomePageState extends State<MyHomePage> {
       statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
     ));
 
-    return Scaffold(
-      bottomNavigationBar: BottomNavigationBar(
+    return PopScope(
+      canPop: _currentIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _currentIndex != 0) {
+          setState(() => _currentIndex = 0);
+        }
+      },
+      child: Scaffold(
+        bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: theme.colorScheme.surface,
         currentIndex: _currentIndex,
@@ -47,16 +54,16 @@ class _MyHomePageState extends State<MyHomePage> {
             BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'More'),
           ],
         ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: const [
-          _HomeTab(),
-          SavedScreen(),
-          MessagesScreen(),
-          MoreScreen(),
-        ],
-      ),
-    );
+        body: IndexedStack(
+          index: _currentIndex,
+          children: const [
+            _HomeTab(),
+            SavedScreen(),
+            MessagesScreen(),
+            MoreScreen(),
+          ],
+        ),
+    ));
   }
 }
 

@@ -23,6 +23,61 @@ Future<void> toggleFavoriteVerse(int verseId) async {
   );
 }
 
+/// Vote types for POST /api/topic-verses/{id}/vote
+String _voteTypeFromMyVote(int? current, bool isUpvote) {
+  if (isUpvote) return current == 1 ? 'clear' : 'upvote';
+  return current == -1 ? 'clear' : 'downvote';
+}
+
+/// Format vote API error for display. Call from catch blocks.
+String formatVoteError(Object e, [StackTrace? st]) {
+  if (e is DioException) {
+    final status = e.response?.statusCode;
+    final data = e.response?.data;
+    if (status != null) {
+      final detail = data is Map ? (data['message'] ?? data['error'] ?? data['detail']) : null;
+      final msg = detail?.toString() ?? '';
+      return 'Vote failed ($status)${msg.isNotEmpty ? ': $msg' : ''}';
+    }
+    return e.message ?? 'Vote failed: ${e.type}';
+  }
+  return 'Vote failed: $e';
+}
+
+/// Votes on a verse. POST /api/topic-verses/{id}/vote
+/// Body: {voteType: 'upvote'|'downvote'|'clear'}
+/// Returns {voteCount, myVote} for reconciliation.
+Future<({int voteCount, int? myVote})> voteVerse(int verseId, int? currentMyVote, bool isUpvote) async {
+  final dio = AuthenticatedDio(Dio()).dio;
+  final voteType = _voteTypeFromMyVote(currentMyVote, isUpvote);
+  final uri = '${AppConfig.currentHost}/api/topic-verses/$verseId/vote';
+  final body = {'voteType': voteType};
+  debugPrint('[Vote] POST $uri body=$body');
+  Response response;
+  try {
+    response = await dio.post(
+      uri,
+      data: body,
+      options: Options(headers: <String, String>{'Content-Type': 'application/json'}),
+    );
+  } on DioException catch (e) {
+    debugPrint('[Vote] DioException: status=${e.response?.statusCode} data=${e.response?.data}');
+    rethrow;
+  }
+  final data = response.data;
+  if (data is Map) {
+    final count = (data['voteCount'] as num?)?.toInt();
+    final mv = data['myVote'] ?? data['my_vote'];
+    int? myVote;
+    if (mv != null) {
+      if (mv is int) myVote = mv == 0 ? null : (mv > 0 ? 1 : -1);
+      else if (mv is String) myVote = mv.toString().toLowerCase() == 'upvote' ? 1 : -1;
+    }
+    return (voteCount: count ?? 0, myVote: myVote);
+  }
+  return (voteCount: 0, myVote: null);
+}
+
 /// Model for a saved topic (id + name for list display).
 class SavedTopic {
   const SavedTopic({required this.id, required this.name});
@@ -60,6 +115,12 @@ class SavedPassage {
     v['previewText'] ??= '';
     v['voteCount'] ??= 0;
     v['isFavorited'] ??= v['favorited'] ?? v['isFavourited'] ?? v['favourite'] ?? true;
+    if (!v.containsKey('myVote') && v.containsKey('my_vote')) v['myVote'] = v['my_vote'];
+    if (!v.containsKey('topicVerseId') && !v.containsKey('topic_verse_id')) {
+      v['topicVerseId'] ??= json['topicVerseId'] ?? json['topic_verse_id'];
+    } else if (!v.containsKey('topicVerseId') && v.containsKey('topic_verse_id')) {
+      v['topicVerseId'] = v['topic_verse_id'];
+    }
     final topic = json['topic'] as Map?;
     final topicId = (json['topicId'] ?? v['topicId'] ?? topic?['id'] ?? topic?['topicId'])?.toString() ?? '';
     final topicName = (json['topicName'] ?? v['topicName'] ?? topic?['name'] ?? topic?['topicName'] ?? topic?['label'])?.toString() ?? '';
@@ -213,3 +274,43 @@ class _FavoriteOverridesNotifier extends Notifier<Map<int, bool>> {
 
 bool isVerseFavorited(Verse verse, Map<int, bool> overrides) =>
     overrides[verse.id] ?? verse.isFavorited;
+
+/// Vote overrides: verseId -> (voteCount, myVote). For optimistic UI + server reconciliation.
+final voteOverridesProvider =
+    NotifierProvider<_VoteOverridesNotifier, Map<int, ({int voteCount, int? myVote})>>(
+  _VoteOverridesNotifier.new,
+);
+
+class _VoteOverridesNotifier extends Notifier<Map<int, ({int voteCount, int? myVote})>> {
+  @override
+  Map<int, ({int voteCount, int? myVote})> build() => {};
+
+  void set(int verseId, int voteCount, int? myVote) {
+    state = {...state, verseId: (voteCount: voteCount, myVote: myVote)};
+  }
+
+  void remove(int verseId) {
+    final next = Map<int, ({int voteCount, int? myVote})>.from(state);
+    next.remove(verseId);
+    state = next;
+  }
+}
+
+(int voteCount, int? myVote) verseVoteState(Verse verse, Map<int, ({int voteCount, int? myVote})> overrides) {
+  final o = overrides[verse.id];
+  if (o != null) return (o.voteCount, o.myVote);
+  return (verse.voteCount, verse.myVote);
+}
+
+/// Optimistic (voteCount, myVote) when toggling vote.
+(int, int?) optimisticVote(int currentCount, int? currentMyVote, bool isUpvote) {
+  if (isUpvote) {
+    if (currentMyVote == 1) return (currentCount - 1, null);
+    if (currentMyVote == -1) return (currentCount + 2, 1);
+    return (currentCount + 1, 1);
+  } else {
+    if (currentMyVote == -1) return (currentCount + 1, null);
+    if (currentMyVote == 1) return (currentCount - 2, -1);
+    return (currentCount - 1, -1);
+  }
+}

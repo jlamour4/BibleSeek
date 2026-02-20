@@ -22,6 +22,16 @@ void _normalizeFavoriteKey(Map<String, Object?> map) {
   }
 }
 
+void _normalizeMyVoteKey(Map<String, Object?> map) {
+  if (map.containsKey('myVote')) return;
+  if (map.containsKey('my_vote')) map['myVote'] = map['my_vote'];
+}
+
+void _normalizeTopicVerseIdKey(Map<String, Object?> map) {
+  if (map.containsKey('topicVerseId')) return;
+  if (map.containsKey('topic_verse_id')) map['topicVerseId'] = map['topic_verse_id'];
+}
+
 /// Provider that fetches verses for a topic. No pagination for now.
 /// TODO: Add pagination when backend supports it (e.g. ?page=1&pageSize=50).
 final topicVersesProvider =
@@ -68,6 +78,8 @@ final topicVersesProvider =
         }
         final map = Map<String, Object?>.from(item);
         _normalizeFavoriteKey(map);
+        _normalizeMyVoteKey(map);
+        _normalizeTopicVerseIdKey(map);
         verses.add(Verse.fromJson(map));
       } catch (e, stack) {
         debugPrint('[TopicVerses] Parse error at index $i: $e');
@@ -243,13 +255,32 @@ class _VerseListState extends ConsumerState<_VerseList> {
       return m;
     });
     try {
-      await toggleFavoriteVerse(v.id);
+      await toggleFavoriteVerse(topicVerseIdForApi(v));
       widget.onFavoriteChange?.call();
     } catch (_) {
       if (mounted) {
         ref.read(favoriteOverridesProvider.notifier).remove(v.id);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to update favorite')),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleVote(Verse v, bool isUpvote) async {
+    final voteOverrides = ref.read(voteOverridesProvider);
+    final (count, myVote) = verseVoteState(v, voteOverrides);
+    final (optCount, optVote) = optimisticVote(count, myVote, isUpvote);
+    ref.read(voteOverridesProvider.notifier).set(v.id, optCount, optVote);
+    try {
+      final result = await voteVerse(topicVerseIdForApi(v), myVote, isUpvote);
+      ref.read(voteOverridesProvider.notifier).set(v.id, result.voteCount, result.myVote);
+    } catch (e, st) {
+      if (mounted) {
+        ref.read(voteOverridesProvider.notifier).remove(v.id);
+        debugPrint('[Vote] Error: $e\n$st');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(formatVoteError(e, st))),
         );
       }
     }
@@ -273,15 +304,18 @@ class _VerseListState extends ConsumerState<_VerseList> {
           itemBuilder: (context, index) {
             final v = widget.verses[index];
             final overrides = ref.watch(favoriteOverridesProvider);
+            final voteOverrides = ref.watch(voteOverridesProvider);
+            final (voteCount, myVote) = verseVoteState(v, voteOverrides);
             return VerseCard(
               key: ValueKey(v.id),
               displayRef: v.displayRef,
               previewText: v.previewText,
-              voteCount: v.voteCount,
+              voteCount: voteCount,
+              myVote: myVote,
               commentCount: 0,
               isFavorited: isVerseFavorited(v, overrides),
-              onUpvote: () => debugPrint('[VerseCard] upvote id=${v.id}'),
-              onDownvote: () => debugPrint('[VerseCard] downvote id=${v.id}'),
+              onUpvote: () => _handleVote(v, true),
+              onDownvote: () => _handleVote(v, false),
               onFavorite: () => _toggleFavorite(v),
               onComment: () => debugPrint('[VerseCard] comment id=${v.id}'),
               onTap: () {

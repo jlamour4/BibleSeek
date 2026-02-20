@@ -15,6 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Verse {
   int get id;
+  int? get topicVerseId;
   int get startVerseCode;
   int? get endVerseCode;
   String get displayRef;
@@ -22,6 +23,8 @@ mixin _$Verse {
   int get voteCount;
   @JsonKey(fromJson: _isFavoritedFromJson)
   bool get isFavorited;
+  @JsonKey(fromJson: _myVoteFromJson)
+  int? get myVote;
 
   /// Create a copy of Verse
   /// with the given fields replaced by the non-null parameter values.
@@ -39,6 +42,8 @@ mixin _$Verse {
         (other.runtimeType == runtimeType &&
             other is Verse &&
             (identical(other.id, id) || other.id == id) &&
+            (identical(other.topicVerseId, topicVerseId) ||
+                other.topicVerseId == topicVerseId) &&
             (identical(other.startVerseCode, startVerseCode) ||
                 other.startVerseCode == startVerseCode) &&
             (identical(other.endVerseCode, endVerseCode) ||
@@ -50,17 +55,18 @@ mixin _$Verse {
             (identical(other.voteCount, voteCount) ||
                 other.voteCount == voteCount) &&
             (identical(other.isFavorited, isFavorited) ||
-                other.isFavorited == isFavorited));
+                other.isFavorited == isFavorited) &&
+            (identical(other.myVote, myVote) || other.myVote == myVote));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, startVerseCode, endVerseCode,
-      displayRef, previewText, voteCount, isFavorited);
+  int get hashCode => Object.hash(runtimeType, id, topicVerseId, startVerseCode,
+      endVerseCode, displayRef, previewText, voteCount, isFavorited, myVote);
 
   @override
   String toString() {
-    return 'Verse(id: $id, startVerseCode: $startVerseCode, endVerseCode: $endVerseCode, displayRef: $displayRef, previewText: $previewText, voteCount: $voteCount, isFavorited: $isFavorited)';
+    return 'Verse(id: $id, topicVerseId: $topicVerseId, startVerseCode: $startVerseCode, endVerseCode: $endVerseCode, displayRef: $displayRef, previewText: $previewText, voteCount: $voteCount, isFavorited: $isFavorited, myVote: $myVote)';
   }
 }
 
@@ -71,12 +77,14 @@ abstract mixin class $VerseCopyWith<$Res> {
   @useResult
   $Res call(
       {int id,
+      int? topicVerseId,
       int startVerseCode,
       int? endVerseCode,
       String displayRef,
       String previewText,
       int voteCount,
-      @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited});
+      @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited,
+      @JsonKey(fromJson: _myVoteFromJson) int? myVote});
 }
 
 /// @nodoc
@@ -92,18 +100,24 @@ class _$VerseCopyWithImpl<$Res> implements $VerseCopyWith<$Res> {
   @override
   $Res call({
     Object? id = null,
+    Object? topicVerseId = freezed,
     Object? startVerseCode = null,
     Object? endVerseCode = freezed,
     Object? displayRef = null,
     Object? previewText = null,
     Object? voteCount = null,
     Object? isFavorited = null,
+    Object? myVote = freezed,
   }) {
     return _then(_self.copyWith(
       id: null == id
           ? _self.id
           : id // ignore: cast_nullable_to_non_nullable
               as int,
+      topicVerseId: freezed == topicVerseId
+          ? _self.topicVerseId
+          : topicVerseId // ignore: cast_nullable_to_non_nullable
+              as int?,
       startVerseCode: null == startVerseCode
           ? _self.startVerseCode
           : startVerseCode // ignore: cast_nullable_to_non_nullable
@@ -128,6 +142,10 @@ class _$VerseCopyWithImpl<$Res> implements $VerseCopyWith<$Res> {
           ? _self.isFavorited
           : isFavorited // ignore: cast_nullable_to_non_nullable
               as bool,
+      myVote: freezed == myVote
+          ? _self.myVote
+          : myVote // ignore: cast_nullable_to_non_nullable
+              as int?,
     ));
   }
 }
@@ -227,12 +245,14 @@ extension VersePatterns on Verse {
   TResult maybeWhen<TResult extends Object?>(
     TResult Function(
             int id,
+            int? topicVerseId,
             int startVerseCode,
             int? endVerseCode,
             String displayRef,
             String previewText,
             int voteCount,
-            @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited)?
+            @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited,
+            @JsonKey(fromJson: _myVoteFromJson) int? myVote)?
         $default, {
     required TResult orElse(),
   }) {
@@ -241,12 +261,14 @@ extension VersePatterns on Verse {
       case _Verse() when $default != null:
         return $default(
             _that.id,
+            _that.topicVerseId,
             _that.startVerseCode,
             _that.endVerseCode,
             _that.displayRef,
             _that.previewText,
             _that.voteCount,
-            _that.isFavorited);
+            _that.isFavorited,
+            _that.myVote);
       case _:
         return orElse();
     }
@@ -269,12 +291,14 @@ extension VersePatterns on Verse {
   TResult when<TResult extends Object?>(
     TResult Function(
             int id,
+            int? topicVerseId,
             int startVerseCode,
             int? endVerseCode,
             String displayRef,
             String previewText,
             int voteCount,
-            @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited)
+            @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited,
+            @JsonKey(fromJson: _myVoteFromJson) int? myVote)
         $default,
   ) {
     final _that = this;
@@ -282,12 +306,14 @@ extension VersePatterns on Verse {
       case _Verse():
         return $default(
             _that.id,
+            _that.topicVerseId,
             _that.startVerseCode,
             _that.endVerseCode,
             _that.displayRef,
             _that.previewText,
             _that.voteCount,
-            _that.isFavorited);
+            _that.isFavorited,
+            _that.myVote);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -309,12 +335,14 @@ extension VersePatterns on Verse {
   TResult? whenOrNull<TResult extends Object?>(
     TResult? Function(
             int id,
+            int? topicVerseId,
             int startVerseCode,
             int? endVerseCode,
             String displayRef,
             String previewText,
             int voteCount,
-            @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited)?
+            @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited,
+            @JsonKey(fromJson: _myVoteFromJson) int? myVote)?
         $default,
   ) {
     final _that = this;
@@ -322,12 +350,14 @@ extension VersePatterns on Verse {
       case _Verse() when $default != null:
         return $default(
             _that.id,
+            _that.topicVerseId,
             _that.startVerseCode,
             _that.endVerseCode,
             _that.displayRef,
             _that.previewText,
             _that.voteCount,
-            _that.isFavorited);
+            _that.isFavorited,
+            _that.myVote);
       case _:
         return null;
     }
@@ -339,16 +369,20 @@ extension VersePatterns on Verse {
 class _Verse implements Verse {
   const _Verse(
       {required this.id,
+      this.topicVerseId,
       required this.startVerseCode,
       this.endVerseCode,
       required this.displayRef,
       required this.previewText,
       required this.voteCount,
-      @JsonKey(fromJson: _isFavoritedFromJson) this.isFavorited = false});
+      @JsonKey(fromJson: _isFavoritedFromJson) this.isFavorited = false,
+      @JsonKey(fromJson: _myVoteFromJson) this.myVote});
   factory _Verse.fromJson(Map<String, dynamic> json) => _$VerseFromJson(json);
 
   @override
   final int id;
+  @override
+  final int? topicVerseId;
   @override
   final int startVerseCode;
   @override
@@ -362,6 +396,9 @@ class _Verse implements Verse {
   @override
   @JsonKey(fromJson: _isFavoritedFromJson)
   final bool isFavorited;
+  @override
+  @JsonKey(fromJson: _myVoteFromJson)
+  final int? myVote;
 
   /// Create a copy of Verse
   /// with the given fields replaced by the non-null parameter values.
@@ -384,6 +421,8 @@ class _Verse implements Verse {
         (other.runtimeType == runtimeType &&
             other is _Verse &&
             (identical(other.id, id) || other.id == id) &&
+            (identical(other.topicVerseId, topicVerseId) ||
+                other.topicVerseId == topicVerseId) &&
             (identical(other.startVerseCode, startVerseCode) ||
                 other.startVerseCode == startVerseCode) &&
             (identical(other.endVerseCode, endVerseCode) ||
@@ -395,17 +434,18 @@ class _Verse implements Verse {
             (identical(other.voteCount, voteCount) ||
                 other.voteCount == voteCount) &&
             (identical(other.isFavorited, isFavorited) ||
-                other.isFavorited == isFavorited));
+                other.isFavorited == isFavorited) &&
+            (identical(other.myVote, myVote) || other.myVote == myVote));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, startVerseCode, endVerseCode,
-      displayRef, previewText, voteCount, isFavorited);
+  int get hashCode => Object.hash(runtimeType, id, topicVerseId, startVerseCode,
+      endVerseCode, displayRef, previewText, voteCount, isFavorited, myVote);
 
   @override
   String toString() {
-    return 'Verse(id: $id, startVerseCode: $startVerseCode, endVerseCode: $endVerseCode, displayRef: $displayRef, previewText: $previewText, voteCount: $voteCount, isFavorited: $isFavorited)';
+    return 'Verse(id: $id, topicVerseId: $topicVerseId, startVerseCode: $startVerseCode, endVerseCode: $endVerseCode, displayRef: $displayRef, previewText: $previewText, voteCount: $voteCount, isFavorited: $isFavorited, myVote: $myVote)';
   }
 }
 
@@ -417,12 +457,14 @@ abstract mixin class _$VerseCopyWith<$Res> implements $VerseCopyWith<$Res> {
   @useResult
   $Res call(
       {int id,
+      int? topicVerseId,
       int startVerseCode,
       int? endVerseCode,
       String displayRef,
       String previewText,
       int voteCount,
-      @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited});
+      @JsonKey(fromJson: _isFavoritedFromJson) bool isFavorited,
+      @JsonKey(fromJson: _myVoteFromJson) int? myVote});
 }
 
 /// @nodoc
@@ -438,18 +480,24 @@ class __$VerseCopyWithImpl<$Res> implements _$VerseCopyWith<$Res> {
   @pragma('vm:prefer-inline')
   $Res call({
     Object? id = null,
+    Object? topicVerseId = freezed,
     Object? startVerseCode = null,
     Object? endVerseCode = freezed,
     Object? displayRef = null,
     Object? previewText = null,
     Object? voteCount = null,
     Object? isFavorited = null,
+    Object? myVote = freezed,
   }) {
     return _then(_Verse(
       id: null == id
           ? _self.id
           : id // ignore: cast_nullable_to_non_nullable
               as int,
+      topicVerseId: freezed == topicVerseId
+          ? _self.topicVerseId
+          : topicVerseId // ignore: cast_nullable_to_non_nullable
+              as int?,
       startVerseCode: null == startVerseCode
           ? _self.startVerseCode
           : startVerseCode // ignore: cast_nullable_to_non_nullable
@@ -474,6 +522,10 @@ class __$VerseCopyWithImpl<$Res> implements _$VerseCopyWith<$Res> {
           ? _self.isFavorited
           : isFavorited // ignore: cast_nullable_to_non_nullable
               as bool,
+      myVote: freezed == myVote
+          ? _self.myVote
+          : myVote // ignore: cast_nullable_to_non_nullable
+              as int?,
     ));
   }
 }

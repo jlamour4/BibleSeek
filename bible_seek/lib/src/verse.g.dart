@@ -8,6 +8,7 @@ part of 'verse.dart';
 
 _Verse _$VerseFromJson(Map<String, dynamic> json) => _Verse(
       id: (json['id'] as num).toInt(),
+      topicVerseId: (json['topicVerseId'] as num?)?.toInt(),
       startVerseCode: (json['startVerseCode'] as num).toInt(),
       endVerseCode: (json['endVerseCode'] as num?)?.toInt(),
       displayRef: json['displayRef'] as String,
@@ -16,14 +17,17 @@ _Verse _$VerseFromJson(Map<String, dynamic> json) => _Verse(
       isFavorited: json['isFavorited'] == null
           ? false
           : _isFavoritedFromJson(json['isFavorited']),
+      myVote: _myVoteFromJson(json['myVote']),
     );
 
 Map<String, dynamic> _$VerseToJson(_Verse instance) => <String, dynamic>{
       'id': instance.id,
+      'topicVerseId': instance.topicVerseId,
       'startVerseCode': instance.startVerseCode,
       'endVerseCode': instance.endVerseCode,
       'displayRef': instance.displayRef,
       'previewText': instance.previewText,
       'voteCount': instance.voteCount,
       'isFavorited': instance.isFavorited,
+      'myVote': instance.myVote,
     };
